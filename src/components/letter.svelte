@@ -2,7 +2,7 @@
   import clsx from 'clsx'
   import type { TLetter } from '../types/letter'
 
-  let { letter }: { letter: TLetter } = $props()
+  let { letter, last }: { letter: TLetter; last: boolean } = $props()
 </script>
 
 <span
@@ -18,8 +18,8 @@
       'before:text-yellow-500': letter.active,
       'before:animate-pulse': letter.active,
       'before:absolute': letter.active,
-      'before:left-[62%]': letter.active && letter.isLast,
-      'before:left-[-62%]': letter.active && !letter.isLast
+      'before:left-[-62%]': letter.active && letter.correct === undefined,
+      'before:left-[62%]': letter.active && letter.correct !== undefined && last
     }
   )}
 >

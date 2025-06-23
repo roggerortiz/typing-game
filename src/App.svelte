@@ -59,13 +59,19 @@
     if (key === ' ') {
       event.preventDefault()
 
-      words[currentWordIndex].letters[currentLetterIndex].active = false
-      words[currentWordIndex].letters[currentLetterIndex].isLast = false
-      words[currentWordIndex].correct = words[currentWordIndex].letters.every((letter: TLetter) => letter.correct)
+      const letters: TLetter[] = words[currentWordIndex].letters.map((letter: TLetter) => ({
+        ...letter,
+        active: false
+      }))
+
+      words[currentWordIndex].letters = letters
+      words[currentWordIndex].correct = letters.every((letter: TLetter) => letter.correct)
       words[currentWordIndex].active = false
 
-      words[currentWordIndex + 1].letters[0].active = true
-      words[currentWordIndex + 1].active = true
+      if (currentWordIndex + 1 < words.length) {
+        words[currentWordIndex + 1].letters[0].active = true
+        words[currentWordIndex + 1].active = true
+      }
 
       currentWordIndex = -1
       currentLetterIndex = -1
@@ -81,26 +87,31 @@
       return
     }
 
-    inputEl.maxLength = words[currentWordIndex].letters.length
+    const letters: TLetter[] = words[currentWordIndex].letters.map((letter: TLetter) => ({
+      ...letter,
+      active: false,
+      correct: undefined
+    }))
+
+    inputEl.maxLength = letters.length
     inputEl.value.split('').forEach((char: string, index: number) => {
-      words[currentWordIndex].letters[index].correct = char === words[currentWordIndex].letters[index].value
+      letters[index].correct = char === letters[index].value
     })
 
-    const inputLength: number = inputEl.value.length
-
-    words[currentWordIndex].letters[currentLetterIndex].active = false
-    words[currentWordIndex].letters[currentLetterIndex].isLast = false
-
-    if (words[currentWordIndex].letters[inputLength]) {
-      words[currentWordIndex].letters[inputLength].active = true
+    if (inputEl.value.length < letters.length) {
+      letters[inputEl.value.length].active = true
     } else {
-      words[currentWordIndex].letters[currentLetterIndex].active = true
-      words[currentWordIndex].letters[currentLetterIndex].isLast = true
+      letters[letters.length - 1].active = true
     }
+
+    words[currentWordIndex].letters = letters
+
+    currentWordIndex = -1
+    currentLetterIndex = -1
   }
 
   const setGameOver = () => {
-    gameOver = true
+    // gameOver = true
   }
 </script>
 

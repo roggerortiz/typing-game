@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
+  import Block from './components/block.svelte'
   import Reset from './components/reset.svelte'
   import Word from './components/word.svelte'
   import { words as INITIAL_WORDS, letters } from './helpers/data'
@@ -10,6 +11,7 @@
   let time: number = $state(INITIAL_TIME)
   let timeId: number = $state(0)
   let words: TWord[] = $state([])
+  let blocked: boolean = $state(false)
   let playing: boolean = $state(false)
   let currentWordIndex: number = $state(-1)
   let currentLetterIndex: number = $state(-1)
@@ -22,10 +24,22 @@
     newGame()
   })
 
-  const onWindowsKeyDown = ({ key }: KeyboardEvent) => {
-    if (letters.includes(key) || key === ' ') {
-      startGame()
+  const onWindowKeyDown = (event: KeyboardEvent) => {
+    const { key } = event
+
+    if (!blocked && !letters.includes(key) && key !== ' ') {
+      return
     }
+
+    if (blocked) {
+      event.preventDefault()
+    }
+
+    startGame()
+  }
+
+  const onWindowClick = () => {
+    startGame()
   }
 
   const onKeyDown = (event: KeyboardEvent) => {
@@ -130,6 +144,14 @@
     newGame()
   }
 
+  const onBlur = () => {
+    setTimeout(() => {
+      blocked = true
+      playing = false
+      clearInterval(timeId)
+    }, 300)
+  }
+
   const newGame = () => {
     if (inputEl) {
       inputEl.focus()
@@ -154,6 +176,10 @@
 
   const startGame = () => {
     inputEl?.focus()
+
+    if (blocked) {
+      blocked = false
+    }
 
     if (!playing) {
       playing = true
@@ -192,11 +218,15 @@
       </p>
       <input
         bind:this={inputEl}
-        class="absolute top-0 left-0 -z-[999] pointer-events-none opacity-0"
+        class="absolute top-0 left-0 -z-[999] pointer-events-none text-white opacity-0"
         onkeydown={onKeyDown}
         onkeyup={onKeyUp}
+        onblur={onBlur}
       />
       <Reset onclick={onClick} />
+      {#if blocked}
+        <Block />
+      {/if}
     </section>
   {:else}
     <section class="flex flex-col gap-2">
@@ -219,4 +249,7 @@
   {/if}
 </main>
 
-<svelte:window onkeydown={onWindowsKeyDown} />
+<svelte:window
+  onkeydown={onWindowKeyDown}
+  onclick={onWindowClick}
+/>

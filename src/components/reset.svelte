@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { MouseEventHandler } from 'svelte/elements'
-  import Icon from './icon.svelte'
+  import ResetIcon from '../icons/reset.svelte'
 
   let { onclick }: { onclick: MouseEventHandler<HTMLButtonElement> } = $props()
 </script>
@@ -10,6 +10,6 @@
     class="cursor-pointer text-gray-400 hover:text-gray-100 hover:scale-110 hover:transition-opacity"
     {onclick}
   >
-    <Icon />
+    <ResetIcon />
   </button>
 </div>

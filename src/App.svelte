@@ -20,7 +20,6 @@
   let gameOver: boolean = $state(false)
   let wpm: number = $state(0)
   let accuracy: number = $state(0)
-  let currentKey: string = $state('')
 
   onMount(() => {
     newGame()
@@ -48,7 +47,6 @@
 
   const onKeyDown = (event: KeyboardEvent) => {
     const { key } = event
-    currentKey = key
 
     currentWordIndex = words.findIndex((word: TWord) => word.active)
     currentLetterIndex = words[currentWordIndex]?.letters?.findIndex((letter: TLetter) => letter.active) ?? -1
@@ -204,13 +202,10 @@
   }
 </script>
 
-<main>
+<main use:clickOutside={onClickOutside}>
   {#if !gameOver}
-    <section
-      class="flex flex-col gap-2"
-      use:clickOutside={onClickOutside}
-    >
-      <time class="text-yellow-500">{time} '{currentKey}'</time>
+    <section class="flex flex-col gap-2">
+      <time class="text-yellow-500">{time}</time>
       <p class="flex flex-wrap gap-x-2 gap-y-0.5 m-0">
         {#each words as word (word.id)}
           <Word {word} />
@@ -218,15 +213,11 @@
       </p>
       <input
         bind:this={inputEl}
-        class="text-white"
-        title="absolute top-0 left-0 -z-[999] pointer-events-none opacity-0 text-white"
+        class="absolute top-0 left-0 -z-[999] pointer-events-none opacity-0 text-white"
         onkeydown={onKeyDown}
         onkeyup={onKeyUp}
       />
       <Reset onclick={newGame} />
-      {#if blocked}
-        <Block onclick={newGame} />
-      {/if}
     </section>
   {:else}
     <section class="flex flex-col gap-2">
@@ -246,6 +237,10 @@
       </div>
       <Reset onclick={newGame} />
     </section>
+  {/if}
+
+  {#if blocked && !gameOver}
+    <Block onclick={startGame} />
   {/if}
 </main>
 

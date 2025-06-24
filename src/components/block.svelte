@@ -6,7 +6,7 @@
 </script>
 
 <div
-  class="absolute top-0 left-0 z-50 flex gap-3 justify-center items-center w-full h-dvh bg-zinc-900/90 text-gray-300"
+  class="absolute top-0 left-0 z-50 flex gap-3 justify-center items-center w-full h-dvh bg-zinc-900/90 text-gray-300 cursor-pointer"
   {onclick}
   onkeyup={() => {}}
   role="button"

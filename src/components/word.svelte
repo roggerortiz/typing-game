@@ -6,7 +6,7 @@
   let { word }: { word: TWord } = $props()
 </script>
 
-<span class={clsx({ 'border-b border-red-400': word.correct === false })}>
+<span class={clsx('transition-colors', { 'border-b border-red-400': word.correct === false })}>
   {#each word.letters as letter (letter.id)}
     <Letter
       {letter}

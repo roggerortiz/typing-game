@@ -4,6 +4,7 @@
   import Reset from './components/reset.svelte'
   import Word from './components/word.svelte'
   import { words as INITIAL_WORDS, letters } from './helpers/data'
+  import { clickOutside } from './helpers/utils'
   import type { TLetter } from './types/letter'
   import type { TWord } from './types/word'
 
@@ -19,6 +20,7 @@
   let gameOver: boolean = $state(false)
   let wpm: number = $state(0)
   let accuracy: number = $state(0)
+  let currentKey: string = $state('')
 
   onMount(() => {
     newGame()
@@ -38,12 +40,15 @@
     startGame()
   }
 
-  const onWindowClick = () => {
-    startGame()
+  const onClickOutside = () => {
+    blocked = true
+    playing = false
+    clearInterval(timeId)
   }
 
   const onKeyDown = (event: KeyboardEvent) => {
     const { key } = event
+    currentKey = key
 
     currentWordIndex = words.findIndex((word: TWord) => word.active)
     currentLetterIndex = words[currentWordIndex]?.letters?.findIndex((letter: TLetter) => letter.active) ?? -1
@@ -89,7 +94,11 @@
       if (words[prevWordIndex]?.correct === false && prevLetterIndex === -1) {
         event.preventDefault()
 
-        prevLetterIndex = words[prevWordIndex].letters.length - 1
+        prevLetterIndex = words[prevWordIndex].letters.findLastIndex((letter: TLetter) => letter.correct !== undefined)
+
+        if (prevLetterIndex === -1) {
+          prevLetterIndex = 0
+        }
 
         words[prevWordIndex].active = true
         words[prevWordIndex].correct = undefined
@@ -102,7 +111,7 @@
         if (inputEl) {
           inputEl.value = words[prevWordIndex].letters
             .slice(0, prevLetterIndex)
-            .map((letter: TLetter) => letter.value)
+            .map((letter: TLetter) => (letter.correct ? letter.value : '*'))
             .join('')
         }
 
@@ -138,18 +147,6 @@
 
     currentWordIndex = -1
     currentLetterIndex = -1
-  }
-
-  const onClick = () => {
-    newGame()
-  }
-
-  const onBlur = () => {
-    setTimeout(() => {
-      blocked = true
-      playing = false
-      clearInterval(timeId)
-    }, 300)
   }
 
   const newGame = () => {
@@ -209,8 +206,11 @@
 
 <main>
   {#if !gameOver}
-    <section class="flex flex-col gap-2">
-      <time class="text-yellow-500">{time}</time>
+    <section
+      class="flex flex-col gap-2"
+      use:clickOutside={onClickOutside}
+    >
+      <time class="text-yellow-500">{time} '{currentKey}'</time>
       <p class="flex flex-wrap gap-x-2 gap-y-0.5 m-0">
         {#each words as word (word.id)}
           <Word {word} />
@@ -218,14 +218,14 @@
       </p>
       <input
         bind:this={inputEl}
-        class="absolute top-0 left-0 -z-[999] pointer-events-none text-white opacity-0"
+        class="text-white"
+        title="absolute top-0 left-0 -z-[999] pointer-events-none opacity-0 text-white"
         onkeydown={onKeyDown}
         onkeyup={onKeyUp}
-        onblur={onBlur}
       />
-      <Reset onclick={onClick} />
+      <Reset onclick={newGame} />
       {#if blocked}
-        <Block />
+        <Block onclick={newGame} />
       {/if}
     </section>
   {:else}
@@ -244,12 +244,9 @@
           time {INITIAL_TIME}s
         </span>
       </div>
-      <Reset onclick={onClick} />
+      <Reset onclick={newGame} />
     </section>
   {/if}
 </main>
 
-<svelte:window
-  onkeydown={onWindowKeyDown}
-  onclick={onWindowClick}
-/>
+<svelte:window onkeydown={onWindowKeyDown} />

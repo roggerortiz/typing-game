@@ -1,48 +1,30 @@
 <script lang="ts">
   import { onMount } from 'svelte'
+  import Reset from './components/reset.svelte'
   import Word from './components/word.svelte'
-  import { words as INITIAL_WORDS } from './helpers/data'
+  import { words as INITIAL_WORDS, letters } from './helpers/data'
   import type { TLetter } from './types/letter'
   import type { TWord } from './types/word'
 
-  let time: number = $state(30)
+  const INITIAL_TIME: number = 30
+  let time: number = $state(INITIAL_TIME)
   let timeId: number = $state(0)
   let words: TWord[] = $state([])
   let playing: boolean = $state(false)
-  let gameOver: boolean = $state(false)
   let currentWordIndex: number = $state(-1)
   let currentLetterIndex: number = $state(-1)
   let inputEl: HTMLInputElement | null = $state(null)
+  let gameOver: boolean = $state(false)
+  let wpm: number = $state(0)
+  let accuracy: number = $state(0)
 
   onMount(() => {
-    inputEl?.focus()
-
-    words = INITIAL_WORDS.toSorted(() => Math.random() - 0.5)
-      .slice(0, 50)
-      .map((word: string, indexW: number) => ({
-        id: indexW + 1,
-        letters: word.split('').map((letter: string, indexL: number) => ({
-          id: indexL + 1,
-          value: letter,
-          active: indexW === 0 && indexL === 0
-        })),
-        active: indexW === 0
-      }))
+    newGame()
   })
 
-  const onWindowsKeyDown = () => {
-    inputEl?.focus()
-
-    if (!playing) {
-      playing = true
-      timeId = setInterval(() => {
-        time--
-
-        if (time === 0) {
-          clearInterval(timeId)
-          setGameOver()
-        }
-      }, 1000)
+  const onWindowsKeyDown = ({ key }: KeyboardEvent) => {
+    if (letters.includes(key) || key === ' ') {
+      startGame()
     }
   }
 
@@ -80,6 +62,40 @@
         inputEl.value = ''
       }
     }
+
+    if (key === 'Backspace') {
+      const prevWordIndex: number = currentWordIndex - 1
+      let prevLetterIndex: number = currentLetterIndex - 1
+
+      if (prevWordIndex === -1 && prevLetterIndex === -1) {
+        event.preventDefault()
+        return
+      }
+
+      if (words[prevWordIndex]?.correct === false && prevLetterIndex === -1) {
+        event.preventDefault()
+
+        prevLetterIndex = words[prevWordIndex].letters.length - 1
+
+        words[prevWordIndex].active = true
+        words[prevWordIndex].correct = undefined
+        words[prevWordIndex].letters[prevLetterIndex].active = true
+        words[prevWordIndex].letters[prevLetterIndex].correct = undefined
+
+        words[currentWordIndex].letters[0].active = false
+        words[currentWordIndex].letters[0].correct = undefined
+
+        if (inputEl) {
+          inputEl.value = words[prevWordIndex].letters
+            .slice(0, prevLetterIndex)
+            .map((letter: TLetter) => letter.value)
+            .join('')
+        }
+
+        currentWordIndex = prevWordIndex
+        currentLetterIndex = prevLetterIndex
+      }
+    }
   }
 
   const onKeyUp = () => {
@@ -110,8 +126,58 @@
     currentLetterIndex = -1
   }
 
-  const setGameOver = () => {
-    // gameOver = true
+  const onClick = () => {
+    newGame()
+  }
+
+  const newGame = () => {
+    if (inputEl) {
+      inputEl.focus()
+      inputEl.value = ''
+    }
+
+    playing = false
+    gameOver = false
+    time = INITIAL_TIME
+    words = INITIAL_WORDS.toSorted(() => Math.random() - 0.5)
+      .slice(0, 50)
+      .map((word: string, indexW: number) => ({
+        id: indexW + 1,
+        letters: word.split('').map((letter: string, indexL: number) => ({
+          id: indexL + 1,
+          value: letter,
+          active: indexW === 0 && indexL === 0
+        })),
+        active: indexW === 0
+      }))
+  }
+
+  const startGame = () => {
+    inputEl?.focus()
+
+    if (!playing) {
+      playing = true
+      timeId = setInterval(() => {
+        time--
+
+        if (time === 0) {
+          clearInterval(timeId)
+          finishGame()
+        }
+      }, 1000)
+    }
+  }
+
+  const finishGame = () => {
+    const letters: TLetter[] = words.map((word: TWord) => word.letters).flat()
+    const correctWords: number = words.filter((word: TWord) => word.correct).length
+    const correctLetters: number = letters.filter((letter: TLetter) => letter.correct === true).length
+    const incorrectLetters: number = letters.filter((letter: TLetter) => letter.correct === false).length
+    const totalLetters: number = correctLetters + incorrectLetters
+
+    accuracy = totalLetters > 0 ? (correctLetters / totalLetters) * 100 : 0
+    wpm = (correctWords * 60) / INITIAL_TIME
+    gameOver = true
   }
 </script>
 
@@ -130,9 +196,26 @@
         onkeydown={onKeyDown}
         onkeyup={onKeyUp}
       />
+      <Reset onclick={onClick} />
     </section>
   {:else}
-    <section></section>
+    <section class="flex flex-col gap-2">
+      <div>
+        <h2 class="text-gray-400 text-2xl">wpm</h2>
+        <h3 class="text-yellow-500 text-4xl">{wpm}</h3>
+      </div>
+      <div>
+        <h2 class="text-gray-400 text-2xl">acc</h2>
+        <h3 class="text-yellow-500 text-4xl">{`${accuracy.toFixed(2)}%`}</h3>
+      </div>
+      <div class="mt-8">
+        <h2 class="text-gray-400 text-sm">test info</h2>
+        <span class="flex gap-1 text-yellow-500 text-sm">
+          time {INITIAL_TIME}s
+        </span>
+      </div>
+      <Reset onclick={onClick} />
+    </section>
   {/if}
 </main>
 
